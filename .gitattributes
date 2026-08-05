@@ -1,0 +1,12 @@
+# Shell scripts MUST keep LF endings. A CRLF shebang fails on Linux with an
+# opaque "bad interpreter" error — and these run on the Pi, on the boat.
+*.sh          text eol=lf
+*.service     text eol=lf
+
+# Source and config: normalize in the repo, check out native.
+*.ts          text
+*.mjs         text
+*.js          text
+*.json        text
+*.md          text
+.env.example  text eol=lf

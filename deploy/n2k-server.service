@@ -1,0 +1,53 @@
+# WAVS N2K telemetry server, systemd unit.
+#
+#   sudo cp deploy/n2k-server.service /etc/systemd/system/
+#   sudo mkdir -p /etc/wavs && sudo cp .env.example /etc/wavs/n2k.env
+#   sudo nano /etc/wavs/n2k.env          # set MODE=can, VESSEL_ID, ...
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now n2k-server
+#   journalctl -u n2k-server -f
+#
+# Adjust User and WorkingDirectory if you did not install to /opt/wavs/n2k-server.
+
+[Unit]
+Description=WAVS NMEA 2000 telemetry server
+Documentation=file:/opt/wavs/n2k-server/README.md
+# can0 is usually brought up by a separate unit or by /etc/network/interfaces.
+# The service retries on its own (CAN_RETRY_MS), so ordering here is a
+# preference, not a requirement.
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=wavs
+Group=wavs
+WorkingDirectory=/opt/wavs/n2k-server
+Environment=NODE_ENV=production
+EnvironmentFile=/etc/wavs/n2k.env
+ExecStart=/usr/bin/node dist/server.js
+
+# The service retries a down interface itself; restart covers real crashes.
+Restart=always
+RestartSec=5
+
+# SIGTERM triggers the graceful shutdown path (stop channel, close sockets).
+KillSignal=SIGTERM
+TimeoutStopSec=10
+
+# Hardening. Reading a CAN socket needs no filesystem write access and no
+# privileges beyond the raw socket, which the interface grants.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/wavs/n2k-server
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_CAN
+MemoryMax=256M
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=n2k-server
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,39 @@
+# Bring the CAN interface up at boot, at the NMEA 2000 bit rate.
+#
+# Raspberry Pi OS (Bookworm) uses NetworkManager, which does not configure CAN
+# interfaces, and ifupdown may not be installed. This unit works regardless of
+# which network stack is in use.
+#
+#   sudo cp deploy/can0.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now can0
+#   ip -details link show can0
+#
+# For a different interface name, copy to can1.service and edit CAN_IF below.
+
+[Unit]
+Description=Bring up can0 at 250 kbit/s (NMEA 2000)
+# The SPI/CAN driver must have created the device first. sys-subsystem-net-
+# devices-can0.device is satisfied once the kernel registers the interface.
+BindsTo=sys-subsystem-net-devices-can0.device
+After=sys-subsystem-net-devices-can0.device
+Before=n2k-server.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+Environment=CAN_IF=can0
+
+# 250000 is not negotiable. 500000 is the automotive rate: at the wrong rate
+# you receive zero frames and the interface reports no error.
+ExecStart=/sbin/ip link set ${CAN_IF} up type can bitrate 250000
+
+# Recover the controller automatically after a bus-off event, which a marginal
+# tap or a termination fault can trigger. Not supported by every driver, so it
+# is allowed to fail without failing the unit.
+ExecStartPost=-/sbin/ip link set ${CAN_IF} type can restart-ms 100
+
+ExecStop=/sbin/ip link set ${CAN_IF} down
+
+[Install]
+WantedBy=multi-user.target

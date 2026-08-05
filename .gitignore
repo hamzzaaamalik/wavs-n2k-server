@@ -1,0 +1,19 @@
+node_modules/
+dist/
+
+# local deployment settings — never commit real values
+.env
+.env.local
+*.env
+!.env.example
+
+# candump captures can be large and contain vessel position history
+captures/
+*.log
+
+# editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
