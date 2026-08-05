@@ -71,11 +71,9 @@ software right" from "is the wiring right" *before* you are standing on a boat.
 
 ### Node 22 or newer — required
 
-The `socketcan` native addon declares `engines.node >= 22`. **npm skips an
-engine-mismatched optional dependency silently**, so on Raspberry Pi OS's stock
-Node 18 everything installs "successfully" and then `MODE=can` fails at run time
-with a misleading *"addon is missing"* — sending you hunting for a compiler that
-is already there.
+**This works fine on a Raspberry Pi.** Node 22 is published for `arm64` and
+`armhf`, so it is one command. Pi OS just happens to *ship* with Node 18, and
+you must upgrade before `npm install` — not after.
 
 ```bash
 node --version        # if this is below v22, run the next two lines
@@ -84,6 +82,24 @@ curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt install -y nodejs
 node --version        # expect v22.x or newer
 ```
+
+Why this order matters: the `socketcan` addon declares `engines.node >= 22`, and
+it is an **optional** dependency. If Node is too old, npm skips it *silently* —
+`npm install` reports success, and then `MODE=can` fails at run time with
+*"addon is missing"*. That reads like a missing compiler, so you go install
+`build-essential`, find it was already there, and lose an hour. The real cause
+is three lines up in the install log.
+
+`npm run doctor` checks the Node version first, before anything else, for
+exactly this reason.
+
+> **Which Pi?** Pi 5, 4, 3, 2 and the Pi Zero **2** W all work — they are
+> ARMv7/ARMv8. The original Pi Zero, Pi Zero W and Pi 1 are **ARMv6**, for which
+> no Node 22 build exists; they are too slow for this anyway. 64-bit Raspberry Pi
+> OS is the smoother path, since `arm64` is the best-supported target.
+>
+> If you already upgraded Node *after* running `npm install`, re-run it:
+> `rm -rf node_modules && npm install`.
 
 ### Build tools and CAN utilities
 

@@ -70,11 +70,13 @@ Hardware: a Raspberry Pi (or any Linux SBC) plus a CAN HAT (PiCAN-M or an
 MCP2515 board), tapped into the N2K backbone with a drop cable and proper
 termination at both ends of the trunk.
 
-**Node 22 or newer is required.** The `socketcan` addon declares
-`engines.node >= 22`, and npm skips an engine-mismatched *optional* dependency
-**silently** — so on Raspberry Pi OS's stock Node 18 you would get a misleading
-"addon is missing" error at run time, and go hunting for a compiler that is
-already installed. `npm run doctor` checks this first and prints the fix.
+**Node 22 or newer is required — install it before `npm install`, not after.**
+This works fine on a Raspberry Pi (Node 22 is published for `arm64` and `armhf`);
+Pi OS just ships with Node 18. The `socketcan` addon is an *optional* dependency
+declaring `engines.node >= 22`, and npm skips an engine mismatch **silently** —
+so the install reports success and `MODE=can` later fails with a misleading
+"addon is missing". `npm run doctor` checks the Node version first for exactly
+this reason. Full detail: [LINUX_SETUP.md](LINUX_SETUP.md#1-os-prep).
 
 ```bash
 node --version                        # must be >= 22
